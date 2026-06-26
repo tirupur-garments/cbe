@@ -249,8 +249,16 @@
                     <!--    {{ formatAmountCurrency(order.total_tax_on_items) }}-->
                     <!--</p>-->
                 </div>
+                <!-- UPI Payment QR -->
+                <div style="text-align: center; margin-top: 12px; padding: 8px 0; border-top: 1px dashed #ccc;">
+                    <p style="font-size: 12px; margin-bottom: 4px; font-weight: 600;">Scan &amp; Pay via UPI</p>
+                    <img :src="upiLink" width="130" height="130" style="display:block; margin: 0 auto;" />
+                    <p style="font-size: 11px; margin-top: 4px; color: #555;">paytm.s26whna@pty</p>
+                    <p style="font-size: 10px; color: #888;">GPay &middot; PhonePe &middot; Paytm &middot; BHIM</p>
+                </div>
             </div>
         </div>
+        
 
         <template #footer>
             <div class="footer-button">
@@ -266,7 +274,7 @@
 </template>
 
 <script>
-import { ref, defineComponent } from "vue";
+import { ref, defineComponent, computed } from "vue";
 import { PrinterOutlined } from "@ant-design/icons-vue";
 import common from "../../../../common/composable/common";
 import BarcodeGenerator from "../../../../common/components/barcode/BarcodeGenerator.vue";
@@ -297,8 +305,35 @@ export default defineComponent({
             newWindow.document.write(invoiceContent);
             newWindow.document.write("</body></html>");
             newWindow.document.close();
+            // Wait for all images (including QR) to load before printing
+            var images = newWindow.document.images;
+            if (images.length === 0) {
+                newWindow.print();
+            } else {
+                var loaded = 0;
+                var total = images.length;
+                var doPrint = () => {
+                    loaded++;
+                    if (loaded >= total) newWindow.print();
+                };
+                for (var i = 0; i < images.length; i++) {
+                    if (images[i].complete) {
+                        doPrint();
+                    } else {
+                        images[i].onload  = doPrint;
+                        images[i].onerror = doPrint; // print anyway if image fails
+                    }
+                }
+            }
+            
             newWindow.print();
         };
+        
+         const upiLink = computed(() => {
+            const amount = props.order?.total ? parseFloat(props.order.total).toFixed(2) : "0.00";
+            const data = `upi://pay?pa=paytm.s26whna@pty&pn=Tirupur%20Garments&am=${amount}&cu=INR&tn=Invoice%20${props.order?.invoice_number || ""}`;
+            return `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(data)}`;
+        });
 
         return {
             onClose,
@@ -306,6 +341,7 @@ export default defineComponent({
             selectedWarehouse,
             formatAmountCurrency,
             printInvoice,
+            upiLink,
         };
     },
 });

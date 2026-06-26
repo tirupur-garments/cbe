@@ -1,5 +1,5 @@
-const primaryColor = '#05a045';
-const primaryHover = '#05a045';
+const primaryColor = '#ff00ff';
+const primaryHover = '#ff00ff';
 const secondaryColor = '#FF69A5';
 const secondaryHover = '#E34A87';
 const linkColor = '#1890ff';
